@@ -1,4 +1,4 @@
-package org.finances;
+
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -20,7 +20,6 @@ public class OrderConsumer implements Runnable {
                 // Waits until element will be available in timeout
                 String orderString = queue.poll(1, TimeUnit.SECONDS);
                 if (Order.isValid(orderString)) {
-                    // System.out.println(orderString);
                     orderBook.handle(new Order(orderString));
                 }
             } catch (InterruptedException e) {

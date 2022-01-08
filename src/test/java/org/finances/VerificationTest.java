@@ -1,6 +1,4 @@
 package org.finances;
-// Do not modify or delete this file. It is used to verify your solution before submission.
-// (c) GSA Capital
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.params.ParameterizedTest;

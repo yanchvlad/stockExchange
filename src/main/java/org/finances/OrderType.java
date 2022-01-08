@@ -1,4 +1,4 @@
-package org.finances;
+
 
 public enum OrderType {
     SELL("S"), BUY("B");

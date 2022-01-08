@@ -1,4 +1,4 @@
-package org.finances;
+
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,13 +19,23 @@ public class OrderBook {
     List<Order> ordersToBuy = new ArrayList<>();
     List<Order> ordersToSell = new ArrayList<>();
     Map<Integer, Order> ordersMap = new HashMap<>();
+    private Object mutexToPrint = new Object();
     private Object mutexToBuy = new Object();
     private Object mutexToSell = new Object();
-    OrderComparisonFunction lLessEqual = (existingOrder, order) -> existingOrder.getPrice() >= order.getPrice();
-    OrderComparisonFunction lGreaterEqual = (existingOrder, order) -> existingOrder.getPrice() <= order.getPrice();
+    OrderComparisonFunction lComparisonBuy = (existingOrder, order) -> existingOrder.getPrice() >= order.getPrice();
+    OrderComparisonFunction lComparisonSell = (existingOrder, order) -> order.getPrice() >= existingOrder.getPrice();
 
     public OrderBook() {
         super();
+    }
+
+    // Short version of sending a copy of list of orders, to avoid possible implementation of changes in object
+    public String getOrdersToBuy() {
+        return ordersToBuy.toString();
+    }
+
+    public String getOrdersToSell() {
+        return ordersToSell.toString();
     }
 
     private List<Order> getOrdersToExecuteOrder(Order order) {
@@ -33,7 +43,7 @@ public class OrderBook {
     }
 
     private OrderComparisonFunction getOrderComaprison(Order order) {
-        return order.isBuy() ?  lLessEqual: lGreaterEqual;
+        return order.isBuy() ? lComparisonBuy: lComparisonSell;
     }
 
     private Set<Integer>  getLockedIds(Order order) {
@@ -44,30 +54,36 @@ public class OrderBook {
         return order.isBuy() ? mutexToBuy: mutexToSell;
     }
 
-    public void handle(Order order) {
-        try {
-            // handle case when order is Iceberg and can be executed several times, 
-            // if it can't be executed will be raised OrderNotHandledException
-            while (order.getQuantity() > 0) {
-                allocate(order);
+    private void addOrderInList(Order order) {
+        List<Order> orders = order.isBuy() ? ordersToBuy: ordersToSell;
+        OrderComparisonFunction comparison = getOrderComaprison(order);
+        int i =0;
+        while (i < orders.size()) {
+            if (!comparison.run(orders.get(i), order)) {
+                break;
             }
-        } catch (OrderNotHandledException e) {
-            ordersMap.put(order.getId(), order);
-            if (order.isBuy()) {
-                ordersToBuy.add(order);
-            } else {
-                ordersToSell.add(order);
-            }
+            i += 1;
         }
-        printValues();
+        orders.add(i, order);
     }
 
-    private void removeFromMapIfEmpty(Order order) {
-        if (order.getQuantity() <= 0) {
-            if (order.getQuantity() < 0) {
-                System.err.println(order.getId() + " is less than 0 " + order.getQuantity());
+    public void handle(Order order) {
+        if (ordersMap.get(order.getId()) != null) {
+            System.err.println("Order with the same id already exists: " + order + " vs "+ ordersMap.get(order.getId()));
+            return;
+        }
+
+        ordersMap.put(order.getId(), order);
+        try {
+            allocate(order);
+        } catch (OrderNotHandledException e) {
+            // pass
+        }
+        synchronized(mutexToPrint) {
+            if (!order.isExecuted()) {
+                addOrderInList(order);
             }
-            this.ordersMap.remove(order.getId());
+            printValues();
         }
     }
 
@@ -79,9 +95,6 @@ public class OrderBook {
         Order sellOrder = (!newOrder.isBuy()) ? newOrder: existingOrder;
         int price = Math.max(sellOrder.getPrice(), buyOrder.getPrice());
         System.out.println(String.format("%d,%d,%d,%d", buyOrder.getId(), sellOrder.getId(), price, quantity));
-        System.err.println(String.format("%d,%d,%d,%d", buyOrder.getId(), sellOrder.getId(), price, quantity));
-        removeFromMapIfEmpty(existingOrder);
-        removeFromMapIfEmpty(newOrder);
     }
 
     private void allocate(Order order) throws OrderNotHandledException {
@@ -90,18 +103,13 @@ public class OrderBook {
         Set<Integer> lockedIds = getLockedIds(order);
         Object mutex = getOrderMutex(order);
 
-        // get ids of orders fittied of interests of new order
-        List<Integer> orderIdsAvailableToLock = getOrderIdsAvailableToLock(order, existingOrders, comparison);
-        // lock ids with mutex
-        List<Integer> newLockedIds = lockToAllocate(mutex, lockedIds, orderIdsAvailableToLock, order.getQuantity());
-        
+        // get ids of orders fitted in interests of new order and lock ids with mutex
+        List<Integer> newLockedIds = lockToAllocate(mutex, lockedIds, existingOrders, comparison, order);
         if (newLockedIds.isEmpty()) {
             throw new OrderNotHandledException("No matching orders");
         }
-
         for (Integer lockedId : newLockedIds) {
             Order existingOrder = ordersMap.get(lockedId);
-            System.err.println("Executing order " + lockedId + " with " + existingOrder.getQuantity() + " for order: " + order.getId() + " " + order.getQuantity());
             executeOrders(existingOrder, order);
             releaseLock(mutex, lockedId, lockedIds);
         }
@@ -112,51 +120,29 @@ public class OrderBook {
             lockedIds.remove(lockedId);
         }
     }
-
-    // separated to avoid overloading on synchronized mutex, need to use List as ordered structure
-    public List<Integer> getOrderIdsAvailableToLock(Order order, List<Order> existingOrders, OrderComparisonFunction comparison) throws org.finances.OrderNotHandledException {
-        int sum = 0;
-        List<Integer> ordersrIdsToLock = new ArrayList<>();
-        for (Order existingOrder : existingOrders) {
-            if (comparison.run(order, existingOrder)) {
-                ordersrIdsToLock.add(existingOrder.getId());
-                sum += existingOrder.getQuantity();
-            } else {
-                break;
-            }
-        }
-        if (sum == 0) {
-            throw new OrderNotHandledException("No suiatable orders.");
-        }
-        return ordersrIdsToLock;
-    }
     
-    protected List<Integer> lockToAllocate(Object mutex, Set<Integer> lockIds, 
-                                        List<Integer> orderIdsAvailableToLock, int allocation) throws OrderNotHandledException {
+    protected List<Integer> lockToAllocate(Object mutex, Set<Integer> lockedIds, 
+                                        List<Order> existingOrders, OrderComparisonFunction comparison, Order order) throws OrderNotHandledException {
         int allocatedSum = 0;
-        List<Integer> lockedIds = new ArrayList<>();
+        List<Integer> newLockedIds = new ArrayList<>();
         synchronized(mutex) {
-            for (Integer orderId : orderIdsAvailableToLock) {
-                Order order = ordersMap.get(orderId);
-                if (order == null) {
-                    continue;
-                }
-
-                int orderQ = order.getQuantity();
-                if (!lockIds.contains(orderId)) {
-                    lockedIds.add(orderId);
-                    lockIds.add(orderId);
-                    allocatedSum += orderQ;
-                    if (allocatedSum >= allocation) {
+            for (Order existingOrder : existingOrders) {
+                if (comparison.run(order, existingOrder) && !lockedIds.contains(existingOrder.getId())) {
+                    newLockedIds.add(existingOrder.getId());
+                    lockedIds.add(existingOrder.getId());
+                    allocatedSum += existingOrder.getQuantity();
+                    // System.out.println("Allocated " + existingOrder.getQuantity() + " from " + existingOrders);
+                    if (allocatedSum >= order.getQuantity()) {
                         break;
                     }
                 }
+                
             }
         }
         if (allocatedSum == 0) {
-            throw new OrderNotHandledException("There are no existing orders for ids: " + orderIdsAvailableToLock.toString());
+            throw new OrderNotHandledException("There are no existing orders for ids: " + existingOrders);
         }
-        return lockedIds;
+        return newLockedIds;
     }
 
     public void printValues() {
@@ -171,8 +157,8 @@ public class OrderBook {
             if (this.ordersToBuy.size() <= i && this.ordersToSell.size() <= i) {
                 break;
             }
-            String buyOutput = formatBuyOrder(this.ordersToBuy, i);
-            String sellOutput = formatSellOrder(this.ordersToSell, i);
+            String buyOutput = formatOrder(this.ordersToBuy, i, true);
+            String sellOutput = formatOrder(this.ordersToSell, i, false);
             if (buyOutput == EMPTY_BUY_STRING && sellOutput == EMPTY_SELL_STRING) {
                 break;
             }
@@ -185,42 +171,21 @@ public class OrderBook {
         System.out.print(output.toString());
     }
 
-    private String formatBuyOrder(List<Order> orders, int i) {
-        String output = EMPTY_BUY_STRING;
-        Order order = null;
-        while (orders.size() > i) {
-            // formatted values output
-            order = orders.get(i);
-            // delete order from list if it's null in map
-            if (ordersMap.get(order.getId()) == null) {
-                orders.remove(i);
-                i += 1;
-            } else {
-                break;
-            }
-        }
-        if (order == null) {
-            output = String.format("|%10d|%13s|%7s", order.getId(), order.getFormattedVolume(), order.getFormattedPrice());
-        }
-        return output; 
-    }
 
-    private String formatSellOrder(List<Order> orders, int i) {
-        String output = EMPTY_SELL_STRING;
+    private String formatOrder(List<Order> orders, int i, boolean isBuy) {
+        String output = isBuy? EMPTY_BUY_STRING : EMPTY_SELL_STRING;
         Order order = null;
         while (orders.size() > i) {
-            // formatted values output
             order = orders.get(i);
-            // delete order from list if it's null in map
-            if (ordersMap.get(order.getId()) == null) {
+            // delete order from list if it's Executed
+            if (order.isExecuted()) {
                 orders.remove(i);
-                i += 1;
             } else {
                 break;
             }
         }
-        if (order != null) {
-            output = String.format("|%7s|%13s|%10d|", order.getFormattedPrice(), order.getFormattedVolume(), order.getId());
+        if (order != null && !order.isExecuted()) {
+            output = order.getFormattedOrder();
         }
         return output; 
     }

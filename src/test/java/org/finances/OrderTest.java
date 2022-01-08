@@ -1,4 +1,4 @@
-package org.finances;
+
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,7 +56,7 @@ public class OrderTest {
         String ordeString = String.join(",", values);
         
         try {
-            Order order = new Order(ordeString);
+            new Order(ordeString);
             assertFalse("Should be thrown OrderException in constructor with invalid peak" == "");
         } catch (OrderException e) {
             // in org.junit.jupiter.api.Test is absent expected parameter, do not import another lib

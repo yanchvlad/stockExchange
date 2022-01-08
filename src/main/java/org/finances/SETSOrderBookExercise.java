@@ -1,6 +1,5 @@
-package org.finances;
 
-import java.util.concurrent.BlockingQueue;
+
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class SETSOrderBookExercise 
@@ -22,7 +21,7 @@ public class SETSOrderBookExercise
         wait(queue);
     }
 
-    private static void wait(BlockingQueue queue) {
+    private static void wait(LinkedBlockingQueue<String> queue) {
         boolean finished = false;
         while (true) {
             if (queue.isEmpty()) {

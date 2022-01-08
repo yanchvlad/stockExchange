@@ -1,4 +1,4 @@
-package org.finances;
+
 
 import java.text.NumberFormat;
 import java.util.Locale;
@@ -25,6 +25,10 @@ public class Order {
         return this.type == OrderType.BUY;
     }
 
+    public boolean isExecuted(){
+        return quantity <= 0;
+    }
+
     public Short getPrice() {
         return price;
     }
@@ -37,8 +41,19 @@ public class Order {
         return formatNumber(getPrice());
     }
 
+    public String getFormattedOrder() {
+        if (isBuy()) {
+            return String.format("|%10d|%13s|%7s", getId(), getFormattedVolume(), getFormattedPrice());
+        }
+        return String.format("|%7s|%13s|%10d|", getFormattedPrice(), getFormattedVolume(), getId());
+    }
+
     public String getFormattedVolume() {
-        return formatNumber(getQuantity());
+        int volume = getQuantity();
+        if (isIceberg()) {
+            volume = Math.min(getQuantity(), getPeak());
+        }
+        return formatNumber(volume);
     }
 
     public Integer getPeak() {
@@ -101,14 +116,13 @@ public class Order {
 
     public int execute(Integer allocationQuantity) {
         int diff = Math.min(getQuantity(), allocationQuantity);
-        System.err.println(id + ": " + quantity + " - " + diff + " = " + (quantity - diff));
         this.quantity -= diff;
         return diff;
     }
 
     @Override
     public String toString() {
-        return String.format("%s,%s,%s, %s/%s", type, id, price, quantity, peak);
+        return String.format("%s,%s,%s$,%s/%s", type, id, price, quantity, peak);
     }
 
 }

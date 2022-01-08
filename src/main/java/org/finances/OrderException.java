@@ -1,4 +1,4 @@
-package org.finances;
+
 
 public class OrderException extends Exception {
 

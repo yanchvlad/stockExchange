@@ -1,4 +1,4 @@
-package org.finances;
+
 
 import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingQueue;

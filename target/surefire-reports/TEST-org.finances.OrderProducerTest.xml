@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" name="org.finances.OrderProducerTest" time="1.021" tests="2" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" name="org.finances.OrderProducerTest" time="1.022" tests="2" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="17"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -12,7 +12,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="GB"/>
     <property name="sun.boot.library.path" value="/usr/local/Cellar/openjdk/17.0.1/libexec/openjdk.jdk/Contents/Home/lib"/>
-    <property name="sun.java.command" value="/Users/kate/projects/demo/target/surefire/surefirebooter12172924021079112490.jar /Users/kate/projects/demo/target/surefire 2021-12-29T13-32-09_072-jvmRun1 surefire5787795524651375361tmp surefire_05703530980246320925tmp"/>
+    <property name="sun.java.command" value="/Users/kate/projects/demo/target/surefire/surefirebooter2648926074941557216.jar /Users/kate/projects/demo/target/surefire 2022-01-03T10-54-20_751-jvmRun1 surefire13882094889499976078tmp surefire_02482646005198798339tmp"/>
     <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="/Users/kate/projects/demo/target/test-classes:/Users/kate/projects/demo/target/classes:/Users/kate/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.4.0/junit-jupiter-engine-5.4.0.jar:/Users/kate/.m2/repository/org/apiguardian/apiguardian-api/1.0.0/apiguardian-api-1.0.0.jar:/Users/kate/.m2/repository/org/junit/platform/junit-platform-engine/1.4.0/junit-platform-engine-1.4.0.jar:/Users/kate/.m2/repository/org/opentest4j/opentest4j/1.1.1/opentest4j-1.1.1.jar:/Users/kate/.m2/repository/org/junit/platform/junit-platform-commons/1.4.0/junit-platform-commons-1.4.0.jar:/Users/kate/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.4.0/junit-jupiter-api-5.4.0.jar:/Users/kate/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.4.0/junit-jupiter-params-5.4.0.jar:/Users/kate/.m2/repository/org/projectlombok/lombok/1.18.20/lombok-1.18.20.jar:/Users/kate/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.13.0/jackson-databind-2.13.0.jar:/Users/kate/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.13.0/jackson-annotations-2.13.0.jar:/Users/kate/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.13.0/jackson-core-2.13.0.jar:/Users/kate/.m2/repository/fun/mike/diff-match-patch/0.0.2/diff-match-patch-0.0.2.jar:"/>
@@ -28,7 +28,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
-    <property name="surefire.real.class.path" value="/Users/kate/projects/demo/target/surefire/surefirebooter12172924021079112490.jar"/>
+    <property name="surefire.real.class.path" value="/Users/kate/projects/demo/target/surefire/surefirebooter2648926074941557216.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.runtime.version" value="17.0.1+0"/>
@@ -55,6 +55,6 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="61.0"/>
   </properties>
-  <testcase name="testOrderProducer_Success" classname="org.finances.OrderProducerTest" time="0.008"/>
-  <testcase name="testOrderProducer_incorrectOrder" classname="org.finances.OrderProducerTest" time="1.007"/>
+  <testcase name="testOrderProducer_Success" classname="org.finances.OrderProducerTest" time="0.009"/>
+  <testcase name="testOrderProducer_incorrectOrder" classname="org.finances.OrderProducerTest" time="1.006"/>
 </testsuite>
